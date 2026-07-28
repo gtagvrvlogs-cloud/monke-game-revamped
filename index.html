@@ -2,31 +2,79 @@
 <html>
 <head>
   <title>Monke Game Revamped</title>
-  <!-- Load Three.js library first -->
+  <!-- Load Three.js library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Load GLTFLoader for your 3D models (Zoo, NPCs, Player) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- Load XR Controller Models (for hand/controller tracking) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/XRControllerModelFactory.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+  </style>
 </head>
 <body>
 
   <script>
     // 1. Initialize Scene, Camera, Renderer
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue
+
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.6, 3);
+
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    
-    // Enable XR on renderer
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // 2. PASTE THE WEBXR SESSION SETTINGS HERE
+    // 2. Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(5, 10, 7);
+    scene.add(directionalLight);
+
+    // 3. Load Your 3D Models (Zoo, NPCs, Player)
+    const loader = new THREE.GLTFLoader();
+
+    // EXAMPLE: Replace 'zoo.glb' with the actual filename of your zoo model in your repository
+    loader.load('zoo.glb', (gltf) => {
+      scene.add(gltf.scene);
+      gltf.scene.position.set(0, 0, 0);
+      gltf.scene.scale.set(1, 1, 1);
+    }, undefined, (error) => {
+      console.error('Error loading zoo model:', error);
+    });
+
+    // EXAMPLE: Load NPCs or Player model the same way if needed:
+    // loader.load('npc.glb', (gltf) => { scene.add(gltf.scene); });
+
+    // 4. WebXR Hand and Controller Setup
+    const controller1 = renderer.xr.getController(0);
+    scene.add(controller1);
+
+    const controller2 = renderer.xr.getController(1);
+    scene.add(controller2);
+
+    // 5. XR Session Settings (Fixes floor tracking)
     renderer.xr.addEventListener('sessionstart', () => {
       renderer.xr.setReferenceSpaceType('local-floor');
     });
 
-    // 3. Render loop (use setAnimationLoop instead of requestAnimationFrame for WebXR)
+    // 6. Render Loop
     renderer.setAnimationLoop(() => {
       renderer.render(scene, camera);
+    });
+
+    // Handle Window Resizing
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
 
 </body>
 </html>
+
